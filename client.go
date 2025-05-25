@@ -1,6 +1,7 @@
 package main
 
 import (
+    "time"
     "database/sql"
 
     "go.mau.fi/whatsmeow"
@@ -9,16 +10,18 @@ import (
 )
 
 type RIVAClient struct {
-    WMClient *whatsmeow.Client
-    Handlers *RIVAClientEvent
-    DB       *RIVAClientDB
-    Log      waLog.Logger
+    WMClient                     *whatsmeow.Client
+    Handlers                     *RIVAClientEvent
+    DB                           *RIVAClientDB
+    Log                          waLog.Logger
+    LastSuccessfulConnectionTime time.Time
 }
 
 func NewRIVAClient(wmClient *whatsmeow.Client, db *sql.DB, logger waLog.Logger) *RIVAClient {
     rc := &RIVAClient{
-        WMClient: wmClient,
-        Log:      logger,
+        WMClient:                     wmClient,
+        Log:                          logger,
+        LastSuccessfulConnectionTime: time.Time{},
     }
     
     rc.DB = NewRIVAClientDB(db, logger)
@@ -93,6 +96,7 @@ func (rc *RIVAClient) EventHandler(evt interface{}) {
     case *events.ConnectFailureReason:
         rc.Handlers.EventConnectFailureReason(v)
     case *events.Connected:
+        rc.LastSuccessfulConnectionTime = time.Now()
         rc.Handlers.EventConnected(v)
     case *events.Contact:
         rc.Handlers.EventContact(v)
@@ -133,6 +137,11 @@ func (rc *RIVAClient) EventHandler(evt interface{}) {
     case *events.MediaRetryError:
         rc.Handlers.EventMediaRetryError(v)
     case *events.Message:
+        if !rc.LastSuccessfulConnectionTime.IsZero() && v.Info.Timestamp.Before(rc.LastSuccessfulConnectionTime) {
+            rc.Log.Infof("Ignoring old message (ID: %s, Timestamp: %s) received before current connection time (%s)", v.Info.ID, v.Info.Timestamp.Format(time.RFC3339), rc.LastSuccessfulConnectionTime.Format(time.RFC3339))
+
+            return
+        }
         rc.Handlers.EventMessage(v)
     case *events.Mute:
         rc.Handlers.EventMute(v)
