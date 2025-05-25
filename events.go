@@ -121,28 +121,17 @@ func (ce *RIVAClientEvent) EventMediaRetry (evt *events.MediaRetry) {}
 func (ce *RIVAClientEvent) EventMediaRetryError (evt *events.MediaRetryError) {}
 
 func (ce *RIVAClientEvent) EventMessage (evt *events.Message) {
-    ce.Log.Infof("Received a message!")
-    ce.Log.Infof("   ID       : %s", evt.Info.ID)
-    ce.Log.Infof("   Source   : %s", evt.Info.Sender)
-    ce.Log.Infof("   Timestamp: %s", evt.Info.Timestamp)
-    ce.Log.Infof("   IsFromMe : %t", evt.Info.IsFromMe)
-    ce.Log.Infof("   IsGroup  : %t", evt.Info.IsGroup)
-    
-    senderPhoneNumber := ce.getPhoneNumberFromJID(evt.Info.Sender)
-    ce.Log.Infof("   Sender JID: %s", evt.Info.Sender.String())
-    if senderPhoneNumber != "" {
-        ce.Log.Infof("   Sender Phone: %s", senderPhoneNumber)
-    }
+    message := NewRIVAClientMessage(ce.WMClient, evt)
 
-    if evt.Message.GetConversation() != "" {
-        ce.Log.Infof("  Content (Conversation): %s", evt.Message.GetConversation())
-    } else if evt.Message.GetExtendedTextMessage() != nil {
-        ce.Log.Infof("  Content (Extended Text): %s", evt.Message.GetExtendedTextMessage().GetText())
-    } else if imageMsg := evt.Message.GetImageMessage(); imageMsg != nil {
-        ce.Log.Infof("  Content (Image): Caption: %s", imageMsg.GetCaption())
-    } else {
-        ce.Log.Infof("  Content (Other type): %s", evt.Message.String())
-    }
+    ce.Log.Infof("------------------------------------")
+    ce.Log.Infof("Received a new message!")
+    ce.Log.Infof("  ID          : %s", message.ID)
+    ce.Log.Infof("  From        : %s", message.From)
+    ce.Log.Infof("  To          : %s", message.To)
+    ce.Log.Infof("  Direction   : %s", message.Direction)
+    ce.Log.Infof("  Content     : %s", message.Content)
+    ce.Log.Infof("  Timestamp   : %s", message.Timestamp)
+    ce.Log.Infof("------------------------------------")
 }
 
 func (ce *RIVAClientEvent) EventMute (evt *events.Mute) {}
