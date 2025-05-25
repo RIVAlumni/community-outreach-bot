@@ -1,6 +1,8 @@
 package main
 
 import (
+    "database/sql"
+
     "go.mau.fi/whatsmeow"
     "go.mau.fi/whatsmeow/types/events"
     waLog "go.mau.fi/whatsmeow/util/log"
@@ -9,16 +11,18 @@ import (
 type RIVAClient struct {
     WMClient *whatsmeow.Client
     Handlers *RIVAClientEvent
+    DB       *RIVAClientDB
     Log      waLog.Logger
 }
 
-func NewRIVAClient(wmClient *whatsmeow.Client, logger waLog.Logger) *RIVAClient {
+func NewRIVAClient(wmClient *whatsmeow.Client, db *sql.DB, logger waLog.Logger) *RIVAClient {
     rc := &RIVAClient{
         WMClient: wmClient,
         Log:      logger,
     }
     
-    rc.Handlers = NewRIVAClientEvent(wmClient, logger)
+    rc.DB = NewRIVAClientDB(db, logger)
+    rc.Handlers = NewRIVAClientEvent(wmClient, rc.DB, logger)
     return rc
 }
 

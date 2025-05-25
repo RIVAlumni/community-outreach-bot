@@ -3,8 +3,10 @@ package main
 import (
     "os"
     "os/signal"
+    "time"
     "context"
     "syscall"
+    "database/sql"
 
     _ "github.com/mattn/go-sqlite3"
     "go.mau.fi/whatsmeow"
@@ -21,10 +23,33 @@ func main() {
     dbLog := waLog.Stdout("Sqlite3::Log", "ERROR", true)
     wmLog := waLog.Stdout("WhatsMeow::Log", "INFO", true)
 
-    container, err := sqlstore.New(ctx, "sqlite3", "file:rivaclient.db?_foreign_keys=on", dbLog)
+    dbConn, err := sql.Open("sqlite3", "file:rivaclient.db?_foreign_keys=on")
     if err != nil {
-        mainLog.Errorf("Failed to connect to database: %v", err)
+        dbLog.Errorf("Failed to open database: %v", err)
         panic(err)
+    }
+
+    defer func() {
+        if err := dbConn.Close(); err != nil {
+            dbLog.Errorf("Failed to close database connection: %v", err)
+        } else {
+            mainLog.Infof("Database connection closed.")
+        }
+    }()
+
+    ctxDb, cancelDb := context.WithTimeout(ctx, 5 * time.Second)
+    defer cancelDb()
+    if err := dbConn.PingContext(ctxDb); err != nil {
+        dbLog.Errorf("Failed to ping database: %v", err)
+        panic(err)
+    }
+
+    mainLog.Infof("Successfully connected to SQLite database.")
+
+    container := sqlstore.NewWithDB(dbConn, "sqlite3", dbLog)
+    if container == nil {
+        mainLog.Errorf("Failed to create WhatsMeow SQL store container.")
+        panic("nil WhatsMeow container")
     }
 
     deviceStore, err := container.GetFirstDevice(ctx)
@@ -33,23 +58,23 @@ func main() {
         panic(err)
     }
 
-    client := whatsmeow.NewClient(deviceStore, wmLog)
+    wm := whatsmeow.NewClient(deviceStore, wmLog)
 
-    rc := NewRIVAClient(client, mainLog)
-    client.AddEventHandler(rc.EventHandler)
+    client := NewRIVAClient(wm, dbConn, mainLog)
+    wm.AddEventHandler(client.EventHandler)
 
-    if client.Store.ID != nil {
+    if wm.Store.ID != nil {
         mainLog.Infof("Existing session found. Attempting to connect...")
-        if err := client.Connect(); err != nil {
+        if err := wm.Connect(); err != nil {
             mainLog.Errorf("Failed to connect with existing session: %v", err)
             mainLog.Infof("This might be due to a session issue. Consider deleting the database file and restarting.")
             panic(err)
         }
     } else {
         mainLog.Infof("No existing session found. Preparing QR code for login...")
-        qrChan, _ := client.GetQRChannel(context.Background())
+        qrChan, _ := wm.GetQRChannel(context.Background())
 
-        if err := client.Connect(); err != nil {
+        if err := wm.Connect(); err != nil {
             mainLog.Errorf("Failed to connect for QR scan: %v", err)
             panic(err)
         }
@@ -82,6 +107,6 @@ func main() {
     <-c
 
     mainLog.Infof("Disconnecting client...")
-    client.Disconnect()
+    wm.Disconnect()
     mainLog.Infof("Client disconnected. Exiting.")
 }

@@ -12,12 +12,14 @@ import (
 
 type RIVAClientEvent struct {
     WMClient *whatsmeow.Client
+    DB       *RIVAClientDB
     Log      waLog.Logger
 }
 
-func NewRIVAClientEvent(wmClient *whatsmeow.Client, logger waLog.Logger) *RIVAClientEvent {
+func NewRIVAClientEvent(wmClient *whatsmeow.Client, db *RIVAClientDB, logger waLog.Logger) *RIVAClientEvent {
     return &RIVAClientEvent{
         WMClient: wmClient,
+        DB:       db,
         Log:      logger,
     }
 }
@@ -122,16 +124,7 @@ func (ce *RIVAClientEvent) EventMediaRetryError (evt *events.MediaRetryError) {}
 
 func (ce *RIVAClientEvent) EventMessage (evt *events.Message) {
     message := NewRIVAClientMessage(ce.WMClient, evt)
-
-    ce.Log.Infof("------------------------------------")
-    ce.Log.Infof("Received a new message!")
-    ce.Log.Infof("  ID          : %s", message.ID)
-    ce.Log.Infof("  From        : %s", message.From)
-    ce.Log.Infof("  To          : %s", message.To)
-    ce.Log.Infof("  Direction   : %s", message.Direction)
-    ce.Log.Infof("  Content     : %s", message.Content)
-    ce.Log.Infof("  Timestamp   : %s", message.Timestamp)
-    ce.Log.Infof("------------------------------------")
+    ce.Log.Infof("New message: %+v", message)
 }
 
 func (ce *RIVAClientEvent) EventMute (evt *events.Mute) {}
