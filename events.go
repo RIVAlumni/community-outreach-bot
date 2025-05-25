@@ -2,12 +2,20 @@ package main
 
 import (
     "os"
+    "time"
     "strings"
 
     "go.mau.fi/whatsmeow"
     "go.mau.fi/whatsmeow/types"
     "go.mau.fi/whatsmeow/types/events"
     waLog "go.mau.fi/whatsmeow/util/log"
+)
+
+const (
+    GREETING_COOLDOWN_HOURS = 24
+    GREETING_MESSAGE = `
+    Thank you for contacting RIVA. An assistant will respond shortly.
+    `
 )
 
 type RIVAClientEvent struct {
@@ -123,8 +131,42 @@ func (ce *RIVAClientEvent) EventMediaRetry (evt *events.MediaRetry) {}
 func (ce *RIVAClientEvent) EventMediaRetryError (evt *events.MediaRetryError) {}
 
 func (ce *RIVAClientEvent) EventMessage (evt *events.Message) {
-    message := NewRIVAClientMessage(ce.WMClient, evt)
-    ce.Log.Infof("New message: %+v", message)
+    msg := NewRIVAClientMessage(ce.WMClient, evt)
+    ce.Log.Infof("New message: %+v", msg)
+
+    if !msg.IsGroup && !msg.IsSentByMe() {
+        chatPartnerJIDUser := msg.From
+
+        lastInteraction, found, err := ce.DB.GetLastInteractionTime(chatPartnerJIDUser)
+        if err != nil {
+            ce.Log.Errorf("Error getting last interaction time for %s: %v. Skipping greeting logic.", chatPartnerJIDUser, err)
+        } else {
+            shouldSendGreeting := false
+            if !found {
+                shouldSendGreeting = true
+                ce.Log.Infof("No previous interaction record for %s. Sending greeting.", chatPartnerJIDUser)
+            } else {
+                if time.Since(lastInteraction).Hours() >= GREETING_COOLDOWN_HOURS {
+                    shouldSendGreeting = true
+                    ce.Log.Infof("Last interaction with %s was at %s. Sending greeting.", chatPartnerJIDUser, lastInteraction.Format(time.RFC3339))
+                } else {
+                    ce.Log.Infof("Last interaction with %s was at %s. Greeting cooldown active.", chatPartnerJIDUser, lastInteraction.Format(time.RFC3339))
+                }
+            }
+
+            if shouldSendGreeting {
+                err := msg.SendGreetingMessage(msg.From)
+                if err != nil {
+                    ce.Log.Errorf("Failed to execute sendGreetingMessage for %s: %v", msg.From, err)
+                }
+            }
+        }
+
+        err = ce.DB.UpdateLastInteractionTime(chatPartnerJIDUser, msg.Timestamp)
+        if err != nil {
+            ce.Log.Errorf("Failed to update last interaction time for %s after processing message: %v", chatPartnerJIDUser, err)
+        }
+    }
 }
 
 func (ce *RIVAClientEvent) EventMute (evt *events.Mute) {}

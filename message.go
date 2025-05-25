@@ -2,11 +2,15 @@ package main
 
 import (
     "time"
+    "context"
     "strings"
 
     "go.mau.fi/whatsmeow"
     "go.mau.fi/whatsmeow/types"
     "go.mau.fi/whatsmeow/types/events"
+    "google.golang.org/protobuf/proto"
+
+    waProto "go.mau.fi/whatsmeow/binary/proto"
 )
 
 type RIVAClientMessageDirection string
@@ -16,13 +20,35 @@ const (
 )
 
 type RIVAClientMessage struct {
+    WMClient    *whatsmeow.Client
     ID          string                     // Unique ID of the message
-    From        string                     // Sender's Phone Number or Jabber ID
-    To          string                     // Receipt's Phone Number or Jabber ID
+    From        types.JID                  // Sender's JID
+    FromPN      string                     // Sender's Phone Number or LID
+    FromNonAD   types.JID                  // Sender's JID without device part
+    To          types.JID                  // Recipient's JID
+    ToPN        string                     // Recipient's Phone Number or LID
+    ToNonAD     types.JID                  // Recipient's JID without device part
     Direction   RIVAClientMessageDirection // Direction of message
+    IsGroup     bool                       // If message came from a group chat
     Content     string                     // Text content of the message
     Timestamp   time.Time                  // Timestamp of the message
     RawMessage  *events.Message            // Raw WhatsMeow message event
+}
+
+// TODO: Change to Reply
+func (msg *RIVAClientMessage) SendGreetingMessage(recipientJID types.JID) error {
+    buildMsg := &waProto.Message{Conversation: proto.String("Thank you for contacting RIVA. A RIVA Representative will be in touch shortly")}
+
+    sanitisedJID := recipientJID.ToNonAD()
+
+    _, err := msg.WMClient.SendMessage(context.Background(), sanitisedJID, buildMsg)
+    if err != nil {
+        msg.WMClient.Log.Errorf("Failed to send greeting message to %s: %v", recipientJID, err)
+        return err
+    }
+
+    msg.WMClient.Log.Infof("Greeting message sent to %s", recipientJID)
+    return nil
 }
 
 func NewRIVAClientMessage(wmClient *whatsmeow.Client, evt *events.Message) RIVAClientMessage {
@@ -57,21 +83,35 @@ func NewRIVAClientMessage(wmClient *whatsmeow.Client, evt *events.Message) RIVAC
         content = "Unsupported message type"
     }
 
-    message := RIVAClientMessage{
+    msg := RIVAClientMessage{
+        WMClient:   wmClient,
         ID:         evt.Info.ID,
+        From:       evt.Info.Sender,
+        To:         evt.Info.Chat,
+        IsGroup:    evt.Info.IsGroup,
         Content:    content,
         Timestamp:  evt.Info.Timestamp,
         RawMessage: evt,
     }
-    message.From = message.getPhoneNumberFromJID(evt.Info.Sender)
-    message.To = message.getPhoneNumberFromJID(evt.Info.Chat)
-    message.Direction = message.getMessageDirection()
+    msg.FromPN = msg.getPhoneNumberFromJID(msg.From)
+    msg.FromNonAD = msg.From.ToNonAD()
+    msg.ToPN = msg.getPhoneNumberFromJID(msg.To)
+    msg.ToNonAD = msg.To.ToNonAD()
+    msg.Direction = msg.getMessageDirection()
 
-    if message.Direction == DirectionIncoming && wmClient.Store.ID != nil {
-        message.To = message.getPhoneNumberFromJID(wmClient.Store.GetJID())
+    if msg.Direction == DirectionIncoming && wmClient.Store.ID != nil {
+        msg.To = wmClient.Store.GetJID()
     }
 
-    return message
+    return msg
+}
+
+func (msg *RIVAClientMessage) IsSentByMe() bool {
+    if msg.WMClient.Store == nil || msg.WMClient.Store.ID == nil {
+        return false
+    }
+
+    return msg.getPhoneNumberFromJID(msg.From) == msg.WMClient.Store.ID.User
 }
 
 func (msg *RIVAClientMessage) getMessageDirection() RIVAClientMessageDirection {
