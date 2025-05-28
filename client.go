@@ -6,26 +6,25 @@ import (
 
     "go.mau.fi/whatsmeow"
     "go.mau.fi/whatsmeow/types/events"
-    waLog "go.mau.fi/whatsmeow/util/log"
 )
 
 type RIVAClient struct {
     WMClient                     *whatsmeow.Client
     Handlers                     *RIVAClientEvent
     DB                           *RIVAClientDB
-    Log                          waLog.Logger
+    Log                          *RIVAClientLog
     LastSuccessfulConnectionTime time.Time
 }
 
-func (_ *RIVAClient) New(wmClient *whatsmeow.Client, db *sql.DB, logger waLog.Logger) *RIVAClient {
+func (_ *RIVAClient) New(wmClient *whatsmeow.Client, db *sql.DB, logger *RIVAClientLog) *RIVAClient {
     rc := &RIVAClient{
         WMClient:                     wmClient,
         Log:                          logger,
         LastSuccessfulConnectionTime: time.Time{},
     }
     
-    rc.DB       = (*RIVAClientDB).New(nil, wmClient, db, logger)
-    rc.Handlers = (*RIVAClientEvent).New(nil, wmClient, rc.DB, logger)
+    rc.DB       = (*RIVAClientDB).New(nil, wmClient, db, logger.DBLog)
+    rc.Handlers = (*RIVAClientEvent).New(nil, wmClient, rc.DB, logger.MainLog)
     return rc
 }
 
@@ -138,7 +137,7 @@ func (rc *RIVAClient) EventHandler(evt interface{}) {
         rc.Handlers.EventMediaRetryError(v)
     case *events.Message:
         if !rc.LastSuccessfulConnectionTime.IsZero() && v.Info.Timestamp.Before(rc.LastSuccessfulConnectionTime) {
-            rc.Log.Infof("Ignoring old message (ID: %s, Timestamp: %s) received before current connection time (%s)", v.Info.ID, v.Info.Timestamp.Format(time.RFC3339), rc.LastSuccessfulConnectionTime.Format(time.RFC3339))
+            rc.Log.MainLog.Infof("Ignoring old message (ID: %s, Timestamp: %s) received before current connection time (%s)", v.Info.ID, v.Info.Timestamp.Format(time.RFC3339), rc.LastSuccessfulConnectionTime.Format(time.RFC3339))
 
             return
         }
