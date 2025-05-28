@@ -51,7 +51,7 @@ func (msg *RIVAClientMessage) SendGreetingMessage(recipientJID types.JID) error 
     return nil
 }
 
-func NewRIVAClientMessage(wmClient *whatsmeow.Client, evt *events.Message) RIVAClientMessage {
+func (_ *RIVAClientMessage) New(wmClient *whatsmeow.Client, evt *events.Message) RIVAClientMessage {
     var content string
 
     switch {

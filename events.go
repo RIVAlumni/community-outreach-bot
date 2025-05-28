@@ -17,7 +17,7 @@ type RIVAClientEvent struct {
     Log      waLog.Logger
 }
 
-func NewRIVAClientEvent(wmClient *whatsmeow.Client, db *RIVAClientDB, logger waLog.Logger) *RIVAClientEvent {
+func (_ *RIVAClientEvent) New(wmClient *whatsmeow.Client, db *RIVAClientDB, logger waLog.Logger) *RIVAClientEvent {
     return &RIVAClientEvent{
         WMClient: wmClient,
         DB:       db,
@@ -124,7 +124,7 @@ func (ce *RIVAClientEvent) EventMediaRetry (evt *events.MediaRetry) {}
 func (ce *RIVAClientEvent) EventMediaRetryError (evt *events.MediaRetryError) {}
 
 func (ce *RIVAClientEvent) EventMessage (evt *events.Message) {
-    msg := NewRIVAClientMessage(ce.WMClient, evt)
+    msg := (*RIVAClientMessage).New(nil, ce.WMClient, evt)
     ce.Log.Infof("New message: %+v", msg)
 
     if !msg.IsGroup && !msg.IsSentByMe() {

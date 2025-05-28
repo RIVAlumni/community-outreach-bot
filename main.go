@@ -60,7 +60,7 @@ func main() {
 
     wm := whatsmeow.NewClient(deviceStore, wmLog)
 
-    client := NewRIVAClient(wm, dbConn, mainLog)
+    client := (*RIVAClient).New(nil, wm, dbConn, mainLog)
     wm.AddEventHandler(client.EventHandler)
 
     if wm.Store.ID != nil {

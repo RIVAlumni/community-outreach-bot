@@ -17,15 +17,15 @@ type RIVAClient struct {
     LastSuccessfulConnectionTime time.Time
 }
 
-func NewRIVAClient(wmClient *whatsmeow.Client, db *sql.DB, logger waLog.Logger) *RIVAClient {
+func (_ *RIVAClient) New(wmClient *whatsmeow.Client, db *sql.DB, logger waLog.Logger) *RIVAClient {
     rc := &RIVAClient{
         WMClient:                     wmClient,
         Log:                          logger,
         LastSuccessfulConnectionTime: time.Time{},
     }
     
-    rc.DB = NewRIVAClientDB(db, logger)
-    rc.Handlers = NewRIVAClientEvent(wmClient, rc.DB, logger)
+    rc.DB       = (*RIVAClientDB).New(nil, wmClient, db, logger)
+    rc.Handlers = (*RIVAClientEvent).New(nil, wmClient, rc.DB, logger)
     return rc
 }
 
