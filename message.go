@@ -37,7 +37,7 @@ type RIVAClientMessage struct {
 
 // TODO: Change to Reply
 func (msg *RIVAClientMessage) SendGreetingMessage(recipientJID types.JID) error {
-    buildMsg := &waProto.Message{Conversation: proto.String("Thank you for contacting RIVA. A RIVA Representative will be in touch shortly")}
+    buildMsg := &waProto.Message{Conversation: proto.String(rBotGreetingCooldownMessage)}
 
     sanitisedJID := recipientJID.ToNonAD()
 

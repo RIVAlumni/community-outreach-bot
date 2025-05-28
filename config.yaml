@@ -1,0 +1,15 @@
+auto_header: "*[RIVA] A message from a RIVA Representative*"
+auto_footer: "_You are receiving this message because you requested for assistance. You are currently in communication with a RIVA Representative._"
+greeting_cooldown: 12
+greeting_message: |
+  *[RIVA] An automatic reply from RIVABot*
+
+  Hi there, I am RIVABot! Thank you for contacting the Rivervale Primary School Alumni Association (RIVA) Community Outreach Team. I have notified a representative of your message and will be replying you as soon as possible.
+
+  In the mean time, are you following our socials?
+  - Instagram (@riv.alumni)
+  - Discord (go.riv-alumni.com/discord)
+  - WhatsApp Group Chat (go.riv-alumni.com/whatsapp)
+
+  _You are receiving this message because you requested for assistance. You will be connected with a RIVA Representative._
+

@@ -9,10 +9,6 @@ import (
     waLog "go.mau.fi/whatsmeow/util/log"
 )
 
-const (
-    CHAT_ACTIVITY_TABLE_NAME = "chat_activity"
-)
-
 type RIVAClientDB struct {
     DB  *sql.DB
     Log waLog.Logger
@@ -37,22 +33,22 @@ func (db *RIVAClientDB) SetupTables() error {
     CREATE TABLE IF NOT EXISTS %s (
         chat_jid     TEXT PRIMARY KEY,
         last_message DATETIME NOT NULL
-    );`, CHAT_ACTIVITY_TABLE_NAME)
+    );`, rBotSqlLastInteractionTableName)
 
     _, err := db.DB.Exec(query)
     if err != nil {
-        db.Log.Errorf("Failed to create %s table: %v", CHAT_ACTIVITY_TABLE_NAME, err)
+        db.Log.Errorf("Failed to create %s table: %v", rBotSqlLastInteractionTableName, err)
         return err
     }
 
-    db.Log.Infof("Table %s ensured to exist.", CHAT_ACTIVITY_TABLE_NAME)
+    db.Log.Infof("Table %s ensured to exist.", rBotSqlLastInteractionTableName)
     return nil
 }
 
 func (db *RIVAClientDB) GetLastInteractionTime(userJID types.JID) (time.Time, bool, error) {
     var timestamp time.Time
 
-    query := fmt.Sprintf(`SELECT last_message FROM %s WHERE chat_jid = ?`, CHAT_ACTIVITY_TABLE_NAME)
+    query := fmt.Sprintf(`SELECT last_message FROM %s WHERE chat_jid = ?`, rBotSqlLastInteractionTableName)
     err := db.DB.QueryRow(query, userJID.String()).Scan(&timestamp)
     if err != nil {
         if err == sql.ErrNoRows {
@@ -71,7 +67,7 @@ func (db *RIVAClientDB) UpdateLastInteractionTime(userJID types.JID, timestamp t
     INSERT OR REPLACE INTO %s (
         chat_jid,
         last_message
-    ) VALUES (?, ?)`, CHAT_ACTIVITY_TABLE_NAME)
+    ) VALUES (?, ?)`, rBotSqlLastInteractionTableName)
 
     _, err := db.DB.Exec(query, userJID.String(), timestamp)
     if err != nil {

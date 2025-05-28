@@ -11,13 +11,6 @@ import (
     waLog "go.mau.fi/whatsmeow/util/log"
 )
 
-const (
-    GREETING_COOLDOWN_HOURS = 24
-    GREETING_MESSAGE = `
-    Thank you for contacting RIVA. An assistant will respond shortly.
-    `
-)
-
 type RIVAClientEvent struct {
     WMClient *whatsmeow.Client
     DB       *RIVAClientDB
@@ -146,7 +139,7 @@ func (ce *RIVAClientEvent) EventMessage (evt *events.Message) {
                 shouldSendGreeting = true
                 ce.Log.Infof("No previous interaction record for %s. Sending greeting.", chatPartnerJIDUser)
             } else {
-                if time.Since(lastInteraction).Hours() >= GREETING_COOLDOWN_HOURS {
+                if time.Since(lastInteraction).Hours() >= rBotGreetingCooldownHours {
                     shouldSendGreeting = true
                     ce.Log.Infof("Last interaction with %s was at %s. Sending greeting.", chatPartnerJIDUser, lastInteraction.Format(time.RFC3339))
                 } else {
