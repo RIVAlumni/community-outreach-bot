@@ -20,7 +20,6 @@ func (_ *RIVAClient) New(wmClient *whatsmeow.Client, db *sql.DB, logger *RIVACli
     rc := &RIVAClient{
         WMClient:                     wmClient,
         Log:                          logger,
-        LastSuccessfulConnectionTime: time.Time{},
     }
     
     rc.DB       = (*RIVAClientDB).New(nil, wmClient, db, logger.DBLog)

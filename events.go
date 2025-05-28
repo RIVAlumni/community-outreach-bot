@@ -181,11 +181,7 @@ func (ce *RIVAClientEvent) EventOfflineSyncPreview (evt *events.OfflineSyncPrevi
 func (ce *RIVAClientEvent) EventPairError (evt *events.PairError) {}
 
 func (ce *RIVAClientEvent) EventPairSuccess (evt *events.PairSuccess) {
-    ce.Log.Infof("Pairing successful.")
-    ce.Log.Infof("  ID          : %s", evt.ID)
-    ce.Log.Infof("  LID         : %s", evt.LID)
-    ce.Log.Infof("  BusinessName: %s", evt.BusinessName)
-    ce.Log.Infof("  Platform    : %s", evt.Platform)
+    ce.Log.Infof("Pairing successful: %+v", evt)
 }
 
 func (ce *RIVAClientEvent) EventPermanentDisconnect (evt *events.PermanentDisconnect) {}

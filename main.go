@@ -29,7 +29,7 @@ func main() {
         if err := dbConn.Close(); err != nil {
             logger.DBLog.Errorf("Failed to close database connection: %v", err)
         } else {
-            logger.MainLog.Infof("Database connection closed.")
+            logger.DBLog.Infof("Database connection closed.")
         }
     }()
 
@@ -44,13 +44,13 @@ func main() {
 
     container := sqlstore.NewWithDB(dbConn, "sqlite3", logger.DBLog)
     if container == nil {
-        logger.MainLog.Errorf("Failed to create WhatsMeow SQL store container.")
+        logger.DBLog.Errorf("Failed to create WhatsMeow SQL store container.")
         panic("nil WhatsMeow container")
     }
 
     deviceStore, err := container.GetFirstDevice(ctx)
     if err != nil {
-        logger.MainLog.Errorf("Failed to get device from store: %v", err)
+        logger.WMLog.Errorf("Failed to get device from store: %v", err)
         panic(err)
     }
 
