@@ -7,7 +7,7 @@ build-image:
 	podman build -t docker.io/taronaeo/rivabot -f Dockerfile --format docker .
 
 run-image:
-	podman run -d --name rivabot --restart always docker.io/taronaeo/rivabot
+	podman run -d --name rivabot --restart always -v rivabot:/data docker.io/taronaeo/rivabot
 
 clean:
 	rm -f rivabot

@@ -9,7 +9,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN --mount=type=cache,target=/tmp/.cache/rivabot-build make
+RUN make
 
 
 FROM scratch AS runner
