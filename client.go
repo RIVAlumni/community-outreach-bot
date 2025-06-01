@@ -3,9 +3,14 @@ package main
 import (
 	"database/sql"
 	"time"
+    "context"
 
 	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
+	"google.golang.org/protobuf/proto"
+
+	waProto "go.mau.fi/whatsmeow/binary/proto"
 )
 
 type RIVAClient struct {
@@ -26,6 +31,23 @@ func (*RIVAClient) New(wmClient *whatsmeow.Client, db *sql.DB, logger *RIVAClien
     rc.DB       = (*RIVAClientDB).New(nil, rc, db, logger.DBLog)
     rc.Handlers = (*RIVAClientEvent).New(nil, rc, rc.DB, logger.MainLog)
     return rc
+}
+
+func (rc *RIVAClient) SendGreetingMessage(recipientJID types.JID) error {
+    buildMsg := &waProto.Message{
+        Conversation: proto.String(rBotGreetingMessage),
+    }
+
+    sanitisedJID := recipientJID.ToNonAD()
+
+    _, err := rc.WMClient.SendMessage(context.Background(), sanitisedJID, buildMsg)
+    if err != nil {
+        rc.Log.MainLog.Errorf("Failed to send greeting message to %s: %v", recipientJID, err)
+        return err
+    }
+
+    rc.Log.MainLog.Infof("Greeting message sent to %s", recipientJID)
+    return nil
 }
 
 func (rc *RIVAClient) EventHandler(evt interface{}) {

@@ -1,16 +1,12 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
 
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
-	"google.golang.org/protobuf/proto"
-
-	waProto "go.mau.fi/whatsmeow/binary/proto"
 )
 
 type RIVAClientMessageDirection string
@@ -45,22 +41,6 @@ type RIVAClientMessage struct {
     Content    string                     // Text content of the message
     Timestamp  time.Time                  // Timestamp of the message
     RawMessage *events.Message            // Raw WhatsMeow message event
-}
-
-// TODO: Change to Reply
-func (msg *RIVAClientMessage) SendGreetingMessage(recipientJID types.JID) error {
-    buildMsg := &waProto.Message{Conversation: proto.String(rBotGreetingCooldownMessage)}
-
-    sanitisedJID := recipientJID.ToNonAD()
-
-    _, err := msg.RClient.WMClient.SendMessage(context.Background(), sanitisedJID, buildMsg)
-    if err != nil {
-        msg.RClient.Log.MainLog.Errorf("Failed to send greeting message to %s: %v", recipientJID, err)
-        return err
-    }
-
-    msg.RClient.Log.MainLog.Infof("Greeting message sent to %s", recipientJID)
-    return nil
 }
 
 func (*RIVAClientMessage) New(rClient *RIVAClient, evt *events.Message) RIVAClientMessage {

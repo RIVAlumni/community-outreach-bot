@@ -51,7 +51,7 @@ const (
 
 var (
     rBotGreetingCooldownHours   = GetConf().GreetingCooldown
-    rBotGreetingCooldownMessage = GetConf().GreetingMessage
+    rBotGreetingMessage = GetConf().GreetingMessage
 
     rBotAutoHeader = GetConf().AutoHeader
     rBotAutoFooter = GetConf().AutoFooter

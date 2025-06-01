@@ -66,7 +66,7 @@ func GreetingIncomingMessageHandler(rc *RIVAClient, message RIVAClientMessage, n
         }
 
         if shouldSendGreeting {
-            if err := message.SendGreetingMessage(fromJID); err != nil {
+            if err := rc.SendGreetingMessage(fromJID); err != nil {
                 rc.Log.MainLog.Errorf("GreetingIncomingMessageHandler: Failed to send greeting for %s: %v", fromJID, err)
             } else {
                 rc.Log.MainLog.Infof("GreetingIncomingMessageHandler: Sending greeting: %+v", message)
