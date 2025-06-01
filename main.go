@@ -3,6 +3,7 @@ package main
 import (
     "os"
     "os/signal"
+    "fmt"
     "time"
     "context"
     "syscall"
@@ -19,7 +20,7 @@ func main() {
     ctx := context.Background()
     logger := (*RIVAClientLog).New(nil)
 
-    dbConn, err := sql.Open("sqlite3", "file:./data/rivaclient.db?_foreign_keys=on")
+    dbConn, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_foreign_keys=on", rBotSqlFilePath))
     if err != nil {
         logger.DBLog.Errorf("Failed to open database: %v", err)
         panic(err)

@@ -28,6 +28,7 @@ func GetConf() *RIVAClientConfig {
 }
 
 const (
+    rBotSqlFilePath = "./data/rivabot.db"
     rBotSqlLastInteractionTableName   = "chat_activity"
     rBotSqlLastInteractionCreateQuery = `
     CREATE TABLE IF NOT EXISTS %s (
