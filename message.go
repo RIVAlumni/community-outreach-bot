@@ -21,12 +21,13 @@ const (
 
 type RIVAClientMessageType string
 const (
-    TypeText     RIVAClientMessageType = "TEXT"
-    TypeImage    RIVAClientMessageType = "IMAGE"
-    TypeVideo    RIVAClientMessageType = "VIDEO"
-    TypeAudio    RIVAClientMessageType = "AUDIO"
-    TypeSticker  RIVAClientMessageType = "STICKER"
-    TypeDocument RIVAClientMessageType = "DOCUMENT"
+    TypeText        RIVAClientMessageType = "TEXT"
+    TypeImage       RIVAClientMessageType = "IMAGE"
+    TypeVideo       RIVAClientMessageType = "VIDEO"
+    TypeAudio       RIVAClientMessageType = "AUDIO"
+    TypeSticker     RIVAClientMessageType = "STICKER"
+    TypeDocument    RIVAClientMessageType = "DOCUMENT"
+    TypeUnsupported RIVAClientMessageType = "UNSUPPORTED"
 )
 
 type RIVAClientMessage struct {
@@ -98,8 +99,10 @@ func (*RIVAClientMessage) New(rClient *RIVAClient, evt *events.Message) RIVAClie
         docMsg := evt.Message.GetDocumentMessage()
         msgContent = fmt.Sprintf("[DOCUMENT] %s (%s)", docMsg.GetFileName(), docMsg.GetFileName())
     case evt.Message.GetStickerMessage() != nil:
+        msgType = TypeSticker
         msgContent = "[STICKER]"
     default:
+        msgType = TypeUnsupported
         msgContent = "[UNSUPPORTED]"
     }
 
