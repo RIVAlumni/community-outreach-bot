@@ -110,6 +110,14 @@ func (*RIVAClientMessage) New(rClient *RIVAClient, evt *events.Message) RIVAClie
     return msg
 }
 
+func (msg *RIVAClientMessage) IsNewsletter() bool {
+    if msg.From.Server == types.NewsletterServer {
+        return true
+    }
+
+    return false
+}
+
 func (msg *RIVAClientMessage) IsSentByMe() bool {
     if msg.RClient.WMClient.Store == nil || msg.RClient.WMClient.Store.ID == nil {
         return false
