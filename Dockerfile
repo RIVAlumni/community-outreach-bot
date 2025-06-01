@@ -16,5 +16,5 @@ FROM scratch AS runner
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /app/rivabot /
 COPY --from=build /app/config.yaml /
-CMD ["/rivabot"]
+ENTRYPOINT ["/rivabot"]
 
