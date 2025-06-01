@@ -136,11 +136,6 @@ func (rc *RIVAClient) EventHandler(evt interface{}) {
     case *events.MediaRetryError:
         rc.Handlers.EventMediaRetryError(v)
     case *events.Message:
-        if !rc.LastSuccessfulConnectionTime.IsZero() && v.Info.Timestamp.Before(rc.LastSuccessfulConnectionTime) {
-            rc.Log.MainLog.Infof("Ignoring old message (ID: %s, Timestamp: %s) received before current connection time (%s)", v.Info.ID, v.Info.Timestamp.Format(time.RFC3339), rc.LastSuccessfulConnectionTime.Format(time.RFC3339))
-
-            return
-        }
         rc.Handlers.EventMessage(v)
     case *events.Mute:
         rc.Handlers.EventMute(v)

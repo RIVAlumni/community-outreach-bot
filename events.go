@@ -35,6 +35,7 @@ func (_ *RIVAClientEvent) New(rClient *RIVAClient, db *RIVAClientDB, logger waLo
     }
 
     ce.RegisterSequentialHandler(IgnoreOldMessagesHandler)
+    ce.RegisterSequentialHandler(LogNewMessageHandler)
     ce.RegisterSequentialHandler(GreetingIncomingMessageHandler)
     ce.RegisterSequentialHandler(AutoEditOutgoingMessageHandler)
 
@@ -141,7 +142,6 @@ func (ce *RIVAClientEvent) EventMediaRetryError (evt *events.MediaRetryError) {}
 
 func (ce *RIVAClientEvent) EventMessage (evt *events.Message) {
     msg := (*RIVAClientMessage).New(nil, ce.RClient, evt)
-    ce.Log.Infof("New message: %+v", msg)
 
     var sequencePipelineStopped bool = false
     var currentSequenceHandlerIndex int = 0

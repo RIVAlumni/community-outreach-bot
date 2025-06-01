@@ -22,9 +22,13 @@ func IgnoreOldMessagesHandler(rc *RIVAClient, message RIVAClientMessage, next fu
         stop()
         return
     }
-
-    rc.Log.MainLog.Infof("Processing message: %+v", message)
     next()
+}
+
+func LogNewMessageHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
+    rc.Log.MainLog.Infof("New message: %+v", message)
+    next()
+    return
 }
 
 func GreetingIncomingMessageHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
