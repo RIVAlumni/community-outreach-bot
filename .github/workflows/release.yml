@@ -20,8 +20,8 @@ env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
 jobs:
-  ubuntu-24-runner:
-    runs-on: ubuntu-24.04
+  ubuntu-latest-runner:
+    runs-on: ubuntu-latest
 
     steps:
       - name: Clone
@@ -32,6 +32,7 @@ jobs:
 
       - name: Build
         id: zig_go_build
+        uses: mlugg/setup-zig@v2
         run: |
           CGO_ENABLED=1 \
             CGO_LDFLAGS="-static" \
@@ -44,11 +45,11 @@ jobs:
       - name: Pack artifacts
         id: pack_artifacts
         run: |
-          zip -r rivabot-bin-ubuntu-24.04-x64.zip ./rivabot
+          zip -r rivabot-bin-ubuntu-latest-x64.zip ./rivabot
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with: 
-          path: rivabot-bin-ubuntu-24.04-x64.zip
-          name: rivabot-bin-ubuntu-24.04-x64.zip
+          path: rivabot-bin-ubuntu-latest-x64.zip
+          name: rivabot-bin-ubuntu-latest-x64.zip
 
