@@ -48,6 +48,11 @@ func main() {
         panic("nil WhatsMeow container")
     }
 
+    if err := container.Upgrade(ctx); err != nil {
+        logger.WMLog.Errorf("Failed to upgrade database: %w", err)
+        panic(err)
+    }
+
     deviceStore, err := container.GetFirstDevice(ctx)
     if err != nil {
         logger.WMLog.Errorf("Failed to get device from store: %v", err)
