@@ -2,9 +2,7 @@ package main
 
 import (
 	"os"
-	"strings"
 
-	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 	waLog "go.mau.fi/whatsmeow/util/log"
 )

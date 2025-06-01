@@ -5,15 +5,15 @@ import (
 )
 
 type SequentialMessageHandlerFunc func(
-    RCClient      *RIVAClient,
-    Message       RIVAClientMessage,
-    next          func(),
-    stop          func(),
+    RClient      *RIVAClient,
+    Message      RIVAClientMessage,
+    next         func(),
+    stop         func(),
 )
 
 type ParallelMessageHandlerFunc func(
-    RCClient      *RIVAClient,
-    Message       RIVAClientMessage,
+    RClient      *RIVAClient,
+    Message      RIVAClientMessage,
 ) error
 
 func FilterOldMessagesHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
