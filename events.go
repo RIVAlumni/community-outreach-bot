@@ -35,6 +35,7 @@ func (*RIVAClientEvent) New(rClient *RIVAClient, db *RIVAClientDB, logger waLog.
     }
 
     ce.RegisterSequentialHandler(IgnoreOldMessagesHandler)
+    ce.RegisterSequentialHandler(IgnoreUnsupportedMessagesHandler)
     ce.RegisterSequentialHandler(LogNewMessageHandler)
     ce.RegisterSequentialHandler(GreetingIncomingMessageHandler)
     ce.RegisterSequentialHandler(AutoEditOutgoingMessageHandler)

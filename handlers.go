@@ -25,6 +25,16 @@ func IgnoreOldMessagesHandler(rc *RIVAClient, message RIVAClientMessage, next fu
     next()
 }
 
+func IgnoreUnsupportedMessagesHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
+    if message.Type == TypeUnsupported {
+        rc.Log.MainLog.Infof("Ignoring unsupported message: %+v", message)
+        stop()
+        return
+    }
+
+    next()
+}
+
 func LogNewMessageHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
     rc.Log.MainLog.Infof("New message: %+v", message)
     next()
