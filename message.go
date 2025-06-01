@@ -5,7 +5,6 @@ import (
     "context"
     "strings"
 
-    "go.mau.fi/whatsmeow"
     "go.mau.fi/whatsmeow/types"
     "go.mau.fi/whatsmeow/types/events"
     "google.golang.org/protobuf/proto"
@@ -20,19 +19,19 @@ const (
 )
 
 type RIVAClientMessage struct {
-    WMClient    *whatsmeow.Client
-    ID          string                     // Unique ID of the message
-    From        types.JID                  // Sender's JID
-    FromPN      string                     // Sender's Phone Number or LID
-    FromNonAD   types.JID                  // Sender's JID without device part
-    To          types.JID                  // Recipient's JID
-    ToPN        string                     // Recipient's Phone Number or LID
-    ToNonAD     types.JID                  // Recipient's JID without device part
-    Direction   RIVAClientMessageDirection // Direction of message
-    IsGroup     bool                       // If message came from a group chat
-    Content     string                     // Text content of the message
-    Timestamp   time.Time                  // Timestamp of the message
-    RawMessage  *events.Message            // Raw WhatsMeow message event
+    RClient    *RIVAClient
+    ID         string                     // Unique ID of the message
+    From       types.JID                  // Sender's JID
+    FromPN     string                     // Sender's Phone Number or LID
+    FromNonAD  types.JID                  // Sender's JID without device part
+    To         types.JID                  // Recipient's JID
+    ToPN       string                     // Recipient's Phone Number or LID
+    ToNonAD    types.JID                  // Recipient's JID without device part
+    Direction  RIVAClientMessageDirection // Direction of message
+    IsGroup    bool                       // If message came from a group chat
+    Content    string                     // Text content of the message
+    Timestamp  time.Time                  // Timestamp of the message
+    RawMessage *events.Message            // Raw WhatsMeow message event
 }
 
 // TODO: Change to Reply
@@ -41,17 +40,17 @@ func (msg *RIVAClientMessage) SendGreetingMessage(recipientJID types.JID) error 
 
     sanitisedJID := recipientJID.ToNonAD()
 
-    _, err := msg.WMClient.SendMessage(context.Background(), sanitisedJID, buildMsg)
+    _, err := msg.RClient.WMClient.SendMessage(context.Background(), sanitisedJID, buildMsg)
     if err != nil {
-        msg.WMClient.Log.Errorf("Failed to send greeting message to %s: %v", recipientJID, err)
+        msg.RClient.Log.MainLog.Errorf("Failed to send greeting message to %s: %v", recipientJID, err)
         return err
     }
 
-    msg.WMClient.Log.Infof("Greeting message sent to %s", recipientJID)
+    msg.RClient.Log.MainLog.Infof("Greeting message sent to %s", recipientJID)
     return nil
 }
 
-func (_ *RIVAClientMessage) New(wmClient *whatsmeow.Client, evt *events.Message) RIVAClientMessage {
+func (_ *RIVAClientMessage) New(rClient *RIVAClient, evt *events.Message) RIVAClientMessage {
     var content string
 
     switch {
@@ -84,7 +83,7 @@ func (_ *RIVAClientMessage) New(wmClient *whatsmeow.Client, evt *events.Message)
     }
 
     msg := RIVAClientMessage{
-        WMClient:   wmClient,
+        RClient:    rClient,
         ID:         evt.Info.ID,
         From:       evt.Info.Sender,
         To:         evt.Info.Chat,
@@ -99,19 +98,19 @@ func (_ *RIVAClientMessage) New(wmClient *whatsmeow.Client, evt *events.Message)
     msg.ToNonAD = msg.To.ToNonAD()
     msg.Direction = msg.getMessageDirection()
 
-    if msg.Direction == DirectionIncoming && wmClient.Store.ID != nil {
-        msg.To = wmClient.Store.GetJID()
+    if msg.Direction == DirectionIncoming && rClient.WMClient.Store.ID != nil {
+        msg.To = rClient.WMClient.Store.GetJID()
     }
 
     return msg
 }
 
 func (msg *RIVAClientMessage) IsSentByMe() bool {
-    if msg.WMClient.Store == nil || msg.WMClient.Store.ID == nil {
+    if msg.RClient.WMClient.Store == nil || msg.RClient.WMClient.Store.ID == nil {
         return false
     }
 
-    return msg.getPhoneNumberFromJID(msg.From) == msg.WMClient.Store.ID.User
+    return msg.getPhoneNumberFromJID(msg.From) == msg.RClient.WMClient.Store.ID.User
 }
 
 func (msg *RIVAClientMessage) getMessageDirection() RIVAClientMessageDirection {

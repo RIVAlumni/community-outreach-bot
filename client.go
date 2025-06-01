@@ -20,10 +20,11 @@ func (_ *RIVAClient) New(wmClient *whatsmeow.Client, db *sql.DB, logger *RIVACli
     rc := &RIVAClient{
         WMClient:                     wmClient,
         Log:                          logger,
+        LastSuccessfulConnectionTime: time.Time{},
     }
     
-    rc.DB       = (*RIVAClientDB).New(nil, wmClient, db, logger.DBLog)
-    rc.Handlers = (*RIVAClientEvent).New(nil, wmClient, rc.DB, logger.MainLog)
+    rc.DB       = (*RIVAClientDB).New(nil, rc, db, logger.DBLog)
+    rc.Handlers = (*RIVAClientEvent).New(nil, rc, rc.DB, logger.MainLog)
     return rc
 }
 

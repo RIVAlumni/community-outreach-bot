@@ -2,27 +2,43 @@ package main
 
 import (
     "os"
-    "time"
     "strings"
 
-    "go.mau.fi/whatsmeow"
     "go.mau.fi/whatsmeow/types"
     "go.mau.fi/whatsmeow/types/events"
     waLog "go.mau.fi/whatsmeow/util/log"
 )
 
 type RIVAClientEvent struct {
-    WMClient *whatsmeow.Client
-    DB       *RIVAClientDB
-    Log      waLog.Logger
+    RClient                   *RIVAClient
+    DB                        *RIVAClientDB
+    Log                       waLog.Logger
+    SequentialMessageHandlers []SequentialMessageHandlerFunc
+    ParallelMessageHandlers   []ParallelMessageHandlerFunc
 }
 
-func (_ *RIVAClientEvent) New(wmClient *whatsmeow.Client, db *RIVAClientDB, logger waLog.Logger) *RIVAClientEvent {
-    return &RIVAClientEvent{
-        WMClient: wmClient,
-        DB:       db,
-        Log:      logger,
+func (ce *RIVAClientEvent) RegisterSequentialHandler(handler SequentialMessageHandlerFunc) {
+    ce.SequentialMessageHandlers = append(ce.SequentialMessageHandlers, handler)
+}
+
+func (ce *RIVAClientEvent) RegisterParallelHandler(handler ParallelMessageHandlerFunc) {
+    ce.ParallelMessageHandlers = append(ce.ParallelMessageHandlers, handler)
+}
+
+func (_ *RIVAClientEvent) New(rClient *RIVAClient, db *RIVAClientDB, logger waLog.Logger) *RIVAClientEvent {
+    ce := &RIVAClientEvent{
+        RClient:                   rClient,
+        DB:                        db,
+        Log:                       logger,
+        SequentialMessageHandlers: make([]SequentialMessageHandlerFunc, 0),
+        ParallelMessageHandlers:   make([]ParallelMessageHandlerFunc, 0),
     }
+
+    ce.RegisterSequentialHandler(IgnoreOldMessagesHandler)
+    ce.RegisterSequentialHandler(GreetingIncomingMessageHandler)
+    ce.RegisterSequentialHandler(AutoEditOutgoingMessageHandler)
+
+    return ce
 }
 
 func (ce *RIVAClientEvent) getPhoneNumberFromJID(jid types.JID) string {
@@ -124,40 +140,50 @@ func (ce *RIVAClientEvent) EventMediaRetry (evt *events.MediaRetry) {}
 func (ce *RIVAClientEvent) EventMediaRetryError (evt *events.MediaRetryError) {}
 
 func (ce *RIVAClientEvent) EventMessage (evt *events.Message) {
-    msg := (*RIVAClientMessage).New(nil, ce.WMClient, evt)
+    msg := (*RIVAClientMessage).New(nil, ce.RClient, evt)
     ce.Log.Infof("New message: %+v", msg)
 
-    if !msg.IsGroup && !msg.IsSentByMe() {
-        chatPartnerJIDUser := msg.From
+    var sequencePipelineStopped bool = false
+    var currentSequenceHandlerIndex int = 0
 
-        lastInteraction, found, err := ce.DB.GetLastInteractionTime(chatPartnerJIDUser)
-        if err != nil {
-            ce.Log.Errorf("Error getting last interaction time for %s: %v. Skipping greeting logic.", chatPartnerJIDUser, err)
+    var nextSequence func()
+    var stopSequence func()
+
+    stopSequence = func() {
+        sequencePipelineStopped = true
+    }
+
+    nextSequence = func() {
+        if sequencePipelineStopped {
+            return
+        }
+
+        if currentSequenceHandlerIndex < len(ce.SequentialMessageHandlers) {
+            handlerToExec := ce.SequentialMessageHandlers[currentSequenceHandlerIndex]
+            currentSequenceHandlerIndex++
+            handlerToExec(ce.RClient, msg, nextSequence, stopSequence)
         } else {
-            shouldSendGreeting := false
-            if !found {
-                shouldSendGreeting = true
-                ce.Log.Infof("No previous interaction record for %s. Sending greeting.", chatPartnerJIDUser)
-            } else {
-                if time.Since(lastInteraction).Hours() >= rBotGreetingCooldownHours {
-                    shouldSendGreeting = true
-                    ce.Log.Infof("Last interaction with %s was at %s. Sending greeting.", chatPartnerJIDUser, lastInteraction.Format(time.RFC3339))
-                } else {
-                    ce.Log.Infof("Last interaction with %s was at %s. Greeting cooldown active.", chatPartnerJIDUser, lastInteraction.Format(time.RFC3339))
-                }
-            }
-
-            if shouldSendGreeting {
-                err := msg.SendGreetingMessage(msg.From)
-                if err != nil {
-                    ce.Log.Errorf("Failed to execute sendGreetingMessage for %s: %v", msg.From, err)
+            if !sequencePipelineStopped {
+                for i, pHandler := range ce.ParallelMessageHandlers {
+                    go func(idx int, handler ParallelMessageHandlerFunc, message RIVAClientMessage) {
+                        if err := handler(ce.RClient, message); err != nil {
+                            ce.RClient.Log.MainLog.Errorf("Error from parallel handler #%d for message id %s: %v", idx+1, message.ID, err)
+                        }
+                    }(i, pHandler, msg)
                 }
             }
         }
+    }
 
-        err = ce.DB.UpdateLastInteractionTime(chatPartnerJIDUser, msg.Timestamp)
-        if err != nil {
-            ce.Log.Errorf("Failed to update last interaction time for %s after processing message: %v", chatPartnerJIDUser, err)
+    if len(ce.SequentialMessageHandlers) > 0 {
+        nextSequence()
+    } else if len(ce.ParallelMessageHandlers) > 0 {
+        for i, pHandler := range ce.ParallelMessageHandlers {
+            go func (idx int, handler ParallelMessageHandlerFunc, message RIVAClientMessage) {
+                if err := handler(ce.RClient, message); err != nil {
+                    ce.RClient.Log.MainLog.Errorf("Error from parallel handler #%d for message id %s: %v", idx+1, message.ID, err)
+                }
+            }(i, pHandler, msg)
         }
     }
 }
