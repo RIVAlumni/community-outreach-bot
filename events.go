@@ -133,47 +133,39 @@ func (ce *RIVAClientEvent) EventMediaRetryError (evt *events.MediaRetryError) {}
 func (ce *RIVAClientEvent) EventMessage (evt *events.Message) {
     msg := (*RIVAClientMessage).New(nil, ce.RClient, evt)
 
-    var sequencePipelineStopped bool = false
     var currentSequenceHandlerIndex int = 0
+    var sequencePipelineStopped bool = false
+    var runNextSequenceStep func()
 
-    var nextSequence func()
-    stopSequence := func() {
+    pipelineStopAction := func() {
         sequencePipelineStopped = true
     }
 
-    nextSequence = func() {
+    runNextSequenceStep = func() {
         if sequencePipelineStopped {
             return
         }
 
-        if currentSequenceHandlerIndex < len(ce.SequentialMessageHandlers) {
-            handlerToExec := ce.SequentialMessageHandlers[currentSequenceHandlerIndex]
-            currentSequenceHandlerIndex++
-            handlerToExec(ce.RClient, msg, nextSequence, stopSequence)
-        } else {
-            if !sequencePipelineStopped {
-                for i, pHandler := range ce.ParallelMessageHandlers {
-                    go func(idx int, handler ParallelMessageHandlerFunc, message RIVAClientMessage) {
-                        if err := handler(ce.RClient, message); err != nil {
-                            ce.RClient.Log.MainLog.Errorf("Error from parallel handler #%d for message id %s: %v", idx+1, message.ID, err)
-                        }
-                    }(i, pHandler, msg)
-                }
+        if currentSequenceHandlerIndex >= len(ce.SequentialMessageHandlers) {
+            for i, pHandler := range ce.ParallelMessageHandlers {
+                go func(idx int, handler ParallelMessageHandlerFunc, msg RIVAClientMessage) {
+                    if err := handler(ce.RClient, msg); err != nil {
+                        ce.RClient.Log.MainLog.Errorf("Error from parallel handler #%d for message id %s: %v", idx+1, msg.ID, err)
+                    }
+                }(i, pHandler, msg)
             }
+
+            return
         }
+
+        handlerToExecute := ce.SequentialMessageHandlers[currentSequenceHandlerIndex]
+        currentSequenceHandlerIndex++
+
+        actionReturnedByHandler := handlerToExecute(ce.RClient, msg, runNextSequenceStep, pipelineStopAction)
+        actionReturnedByHandler()
     }
 
-    if len(ce.SequentialMessageHandlers) > 0 {
-        nextSequence()
-    } else if len(ce.ParallelMessageHandlers) > 0 {
-        for i, pHandler := range ce.ParallelMessageHandlers {
-            go func (idx int, handler ParallelMessageHandlerFunc, message RIVAClientMessage) {
-                if err := handler(ce.RClient, message); err != nil {
-                    ce.RClient.Log.MainLog.Errorf("Error from parallel handler #%d for message id %s: %v", idx+1, message.ID, err)
-                }
-            }(i, pHandler, msg)
-        }
-    }
+    runNextSequenceStep()
 }
 
 func (ce *RIVAClientEvent) EventMute (evt *events.Mute) {}

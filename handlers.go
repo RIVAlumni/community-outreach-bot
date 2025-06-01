@@ -2,58 +2,54 @@ package main
 
 import (
 	"time"
-
-	"go.mau.fi/whatsmeow/types"
 )
 
 type SequentialMessageHandlerFunc func(
-    RClient      *RIVAClient,
-    Message      RIVAClientMessage,
-    next         func(),
-    stop         func(),
-)
+    rc   *RIVAClient,
+    msg  RIVAClientMessage,
+    next func(),
+    stop func(),
+) func()
 
 type ParallelMessageHandlerFunc func(
-    RClient      *RIVAClient,
-    Message      RIVAClientMessage,
+    rc  *RIVAClient,
+    msg RIVAClientMessage,
 ) error
 
-func FilterOldMessagesHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
-    if !rc.LastSuccessfulConnectionTime.IsZero() && message.Timestamp.Before(rc.LastSuccessfulConnectionTime) {
-        rc.Log.MainLog.Infof("Ignoring old message: %+v", message)
-        stop()
-        return
+func FilterOldMessagesHandler(rc *RIVAClient, msg RIVAClientMessage, next func(), stop func()) func() {
+    if !rc.LastSuccessfulConnectionTime.IsZero() && msg.Timestamp.Before(rc.LastSuccessfulConnectionTime) {
+        rc.Log.MainLog.Infof("Ignoring old message: %+v", msg)
+        return stop
     }
-    next()
+    
+    return next
 }
 
-func FilterUnsupportedMessagesHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
-    if message.Type == TypeUnsupported {
-        rc.Log.MainLog.Infof("Ignoring unsupported message: %+v", message)
-        stop()
-        return
+func FilterUnsupportedMessagesHandler(rc *RIVAClient, msg RIVAClientMessage, next func(), stop func()) func() {
+    if msg.Type == TypeUnsupported {
+        rc.Log.MainLog.Infof("Ignoring unsupported message: %+v", msg)
+        return stop
     }
 
-    if message.IsNewsletter() {
-        rc.Log.MainLog.Infof("Ignoring newsletter message: %+v", message)
-        stop()
-        return
+    if msg.IsNewsletter() {
+        rc.Log.MainLog.Infof("Ignoring newsletter message: %+v", msg)
+        return stop
     }
 
-    next()
+    return next
 }
 
-func LogNewMessageHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
-    rc.Log.MainLog.Infof("New message: %+v", message)
-    next()
+func LogNewMessageHandler(rc *RIVAClient, msg RIVAClientMessage, next func(), stop func()) func() {
+    rc.Log.MainLog.Infof("New message: %+v", msg)
+    return next
 }
 
-func SendGreetingMessageHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
-    if !message.IsSentByMe() && !message.IsGroup {
-        rc.Log.MainLog.Infof("SendGreetingMessageHandler: Processing message: %+v", message)
+func SendGreetingMessageHandler(rc *RIVAClient, msg RIVAClientMessage, next func(), stop func()) func() {
+    if !msg.IsSentByMe() && !msg.IsGroup {
+        rc.Log.MainLog.Infof("SendGreetingMessageHandler: Processing message: %+v", msg)
 
-        fromJID := message.FromNonAD
-        isNewsletter := message.IsNewsletter()
+        fromJID := msg.FromNonAD
+        isNewsletter := msg.IsNewsletter()
 
         switch {
         case isNewsletter:
@@ -62,9 +58,8 @@ func SendGreetingMessageHandler(rc *RIVAClient, message RIVAClientMessage, next 
             lastInteraction, found, err := rc.DB.GetLastInteractionTime(fromJID)
             if err != nil {
                 rc.Log.MainLog.Errorf("SendGreetingMessageHandler: Error getting last interaction time for %s: %v", fromJID, err)
-                rc.Log.MainLog.Errorf("SendGreetingMessageHandler: Skipping greeting logic: %+v", message)
-                next()
-                return
+                rc.Log.MainLog.Errorf("SendGreetingMessageHandler: Skipping greeting logic: %+v", msg)
+                return next
             }
             
             shouldSendGreeting := false
@@ -76,37 +71,39 @@ func SendGreetingMessageHandler(rc *RIVAClient, message RIVAClientMessage, next 
                 rc.Log.MainLog.Infof("SendGreetingMessageHandler: Last interaction with %s was at %s", fromJID, lastInteraction.Format(time.RFC3339))
             } else {
                 rc.Log.MainLog.Infof("SendGreetingMessageHandler: Last interaction with %s was at %s", fromJID, lastInteraction.Format(time.RFC3339))
-                rc.Log.MainLog.Infof("SendGreetingMessageHandler: Greeting cooldown: %+v", message)
+                rc.Log.MainLog.Infof("SendGreetingMessageHandler: Greeting cooldown: %+v", msg)
             }
 
             if shouldSendGreeting {
                 if err := rc.SendGreetingMessage(fromJID); err != nil {
                     rc.Log.MainLog.Errorf("SendGreetingMessageHandler: Failed to send greeting for %s: %v", fromJID, err)
                 } else {
-                    rc.Log.MainLog.Infof("SendGreetingMessageHandler: Sending greeting: %+v", message)
+                    rc.Log.MainLog.Infof("SendGreetingMessageHandler: Sending greeting: %+v", msg)
                 }
             }
 
         }
 
-        if err := rc.DB.UpdateLastInteractionTime(fromJID, message.Timestamp); err != nil {
+        if err := rc.DB.UpdateLastInteractionTime(fromJID, msg.Timestamp); err != nil {
             rc.Log.MainLog.Errorf("SendGreetingMessageHandler: Failed to update last interaction for %s: %v", fromJID, err)
         } else {
-            rc.Log.MainLog.Infof("SendGreetingMessageHandler: Updating last interaction time for %s to %s", fromJID, message.Timestamp.Format(time.RFC3339))
+            rc.Log.MainLog.Infof("SendGreetingMessageHandler: Updating last interaction time for %s to %s", fromJID, msg.Timestamp.Format(time.RFC3339))
         }
     }
-    next()
+
+    return next
 }
 
-func AutoEditOutgoingMessageHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
-    if message.IsSentByMe() {
-        rc.Log.MainLog.Infof("AutoEditOutgoingMessageHandler: Processing message: %+v", message)
+func AutoEditOutgoingMessageHandler(rc *RIVAClient, msg RIVAClientMessage, next func(), stop func()) func() {
+    if msg.IsSentByMe() {
+        rc.Log.MainLog.Infof("AutoEditOutgoingMessageHandler: Processing message: %+v", msg)
         go func() {
             time.Sleep(1 * time.Second)
             rc.Log.MainLog.Warnf("AutoEditOutgoingMessageHandler: Stub fired")
             // Complete message edit via helper function
         }()
     }
-    next()
+
+    return next
 }
 
