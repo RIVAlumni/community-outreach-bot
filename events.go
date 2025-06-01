@@ -43,15 +43,6 @@ func (*RIVAClientEvent) New(rClient *RIVAClient, db *RIVAClientDB, logger waLog.
     return ce
 }
 
-func (ce *RIVAClientEvent) getPhoneNumberFromJID(jid types.JID) string {
-    if jid.User == "" {
-        return ""
-    }
-
-    parts := strings.Split(jid.User, ":")
-    return parts[0]
-}
-
 func (ce *RIVAClientEvent) EventAppState(evt *events.AppState) {}
 
 func (ce *RIVAClientEvent) EventAppStateSyncComplete(evt *events.AppStateSyncComplete) {}
