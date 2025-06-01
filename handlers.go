@@ -66,6 +66,8 @@ func GreetingIncomingMessageHandler(rc *RIVAClient, message RIVAClientMessage, n
 
         if err := rc.DB.UpdateLastInteractionTime(fromJID, message.Timestamp); err != nil {
             rc.Log.MainLog.Errorf("GreetingIncomingMessageHandler: Failed to update last interaction for %s: %v", fromJID, err)
+        } else {
+            rc.Log.MainLog.Infof("GreetingIncomingMessageHandler: Updating last interaction time for %s to %s", fromJID, message.Timestamp.Format(time.RFC3339))
         }
     }
     next()
