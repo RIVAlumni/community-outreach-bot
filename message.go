@@ -1,6 +1,7 @@
 package main
 
 import (
+    "fmt"
     "time"
     "context"
     "strings"
@@ -18,9 +19,20 @@ const (
     DirectionOutgoing RIVAClientMessageDirection = "OUTGOING"
 )
 
+type RIVAClientMessageType string
+const (
+    TypeText     RIVAClientMessageType = "TEXT"
+    TypeImage    RIVAClientMessageType = "IMAGE"
+    TypeVideo    RIVAClientMessageType = "VIDEO"
+    TypeAudio    RIVAClientMessageType = "AUDIO"
+    TypeSticker  RIVAClientMessageType = "STICKER"
+    TypeDocument RIVAClientMessageType = "DOCUMENT"
+)
+
 type RIVAClientMessage struct {
     RClient    *RIVAClient
     ID         string                     // Unique ID of the message
+    Type       RIVAClientMessageType      // Message type
     From       types.JID                  // Sender's JID
     FromPN     string                     // Sender's Phone Number or LID
     FromNonAD  types.JID                  // Sender's JID without device part
@@ -51,44 +63,54 @@ func (msg *RIVAClientMessage) SendGreetingMessage(recipientJID types.JID) error 
 }
 
 func (_ *RIVAClientMessage) New(rClient *RIVAClient, evt *events.Message) RIVAClientMessage {
-    var content string
+    var msgType RIVAClientMessageType
+    var msgContent string
 
     switch {
     case evt.Message.GetConversation() != "":
-        content = evt.Message.GetConversation()
+        msgType = TypeText
+        msgContent = evt.Message.GetConversation()
     case evt.Message.GetExtendedTextMessage() != nil:
-        content = evt.Message.GetExtendedTextMessage().GetText()
+        msgType = TypeText
+        msgContent = evt.Message.GetExtendedTextMessage().GetText()
     case evt.Message.GetImageMessage() != nil:
-        imageMsg := evt.Message.GetImageMessage()
+        msgType = TypeImage
+        imgMsg := evt.Message.GetImageMessage()
 
-        content = "Image message"
-        if imageMsg.GetCaption() != "" {
-            content += ": " + imageMsg.GetCaption()
+        msgContent = imgMsg.GetCaption()
+        if msgContent != "" {
+            msgContent = "[IMAGE]"
         }
     case evt.Message.GetVideoMessage() != nil:
-        videoMsg := evt.Message.GetVideoMessage()
+        msgType = TypeVideo
+        vidMsg := evt.Message.GetVideoMessage()
 
-        content = "Video message"
-        if videoMsg.GetCaption() != "" {
-            content += ": " + videoMsg.GetCaption()
+        msgContent = vidMsg.GetCaption()
+        if msgContent != "" {
+            msgContent = "[VIDEO]"
         }
     case evt.Message.GetAudioMessage() != nil:
-        content = "Audio message"
+        msgType = TypeAudio
+        msgContent = "[AUDIO]"
         // TODO: Use audio transformer models to transcribe audio
     case evt.Message.GetDocumentMessage() != nil:
+        msgType = TypeDocument
         docMsg := evt.Message.GetDocumentMessage()
-        content = "Document message: " + docMsg.GetTitle()
+        msgContent = fmt.Sprintf("[DOCUMENT] %s (%s)", docMsg.GetFileName(), docMsg.GetFileName())
+    case evt.Message.GetStickerMessage() != nil:
+        msgContent = "[STICKER]"
     default:
-        content = "Unsupported message type"
+        msgContent = "[UNSUPPORTED]"
     }
 
     msg := RIVAClientMessage{
         RClient:    rClient,
         ID:         evt.Info.ID,
+        Type:       msgType,
         From:       evt.Info.Sender,
         To:         evt.Info.Chat,
         IsGroup:    evt.Info.IsGroup,
-        Content:    content,
+        Content:    msgContent,
         Timestamp:  evt.Info.Timestamp,
         RawMessage: evt,
     }
