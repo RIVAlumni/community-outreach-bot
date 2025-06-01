@@ -9,6 +9,9 @@ build-image:
 run-image:
 	podman run -d --name rivabot --restart always -v rivabot:/data docker.io/taronaeo/rivabot
 
+publish-image:
+	podman push docker.io/taronaeo/rivabot
+
 clean:
 	rm -f rivabot
 
