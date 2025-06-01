@@ -16,7 +16,7 @@ type ParallelMessageHandlerFunc func(
     Message       RIVAClientMessage,
 ) error
 
-func IgnoreOldMessagesHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
+func FilterOldMessagesHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
     if !rc.LastSuccessfulConnectionTime.IsZero() && message.Timestamp.Before(rc.LastSuccessfulConnectionTime) {
         rc.Log.MainLog.Infof("Ignoring old message: %+v", message)
         stop()
@@ -25,7 +25,7 @@ func IgnoreOldMessagesHandler(rc *RIVAClient, message RIVAClientMessage, next fu
     next()
 }
 
-func IgnoreUnsupportedMessagesHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
+func FilterUnsupportedMessagesHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
     if message.Type == TypeUnsupported {
         rc.Log.MainLog.Infof("Ignoring unsupported message: %+v", message)
         stop()

@@ -34,8 +34,8 @@ func (*RIVAClientEvent) New(rClient *RIVAClient, db *RIVAClientDB, logger waLog.
         ParallelMessageHandlers:   make([]ParallelMessageHandlerFunc, 0),
     }
 
-    ce.RegisterSequentialHandler(IgnoreOldMessagesHandler)
-    ce.RegisterSequentialHandler(IgnoreUnsupportedMessagesHandler)
+    ce.RegisterSequentialHandler(FilterOldMessagesHandler)
+    ce.RegisterSequentialHandler(FilterUnsupportedMessagesHandler)
     ce.RegisterSequentialHandler(LogNewMessageHandler)
     ce.RegisterSequentialHandler(GreetingIncomingMessageHandler)
     ce.RegisterSequentialHandler(AutoEditOutgoingMessageHandler)
