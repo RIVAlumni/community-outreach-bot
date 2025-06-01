@@ -1,7 +1,7 @@
 package main
 
 import (
-    "time"
+	"time"
 )
 
 type SequentialMessageHandlerFunc func(
@@ -28,13 +28,12 @@ func IgnoreOldMessagesHandler(rc *RIVAClient, message RIVAClientMessage, next fu
 func LogNewMessageHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
     rc.Log.MainLog.Infof("New message: %+v", message)
     next()
-    return
 }
 
 func GreetingIncomingMessageHandler(rc *RIVAClient, message RIVAClientMessage, next func(), stop func()) {
     if !message.IsSentByMe() && !message.IsGroup {
         rc.Log.MainLog.Infof("GreetingIncomingMessageHandler: Processing message: %+v", message)
-        
+
         fromJID := message.FromNonAD
         lastInteraction, found, err := rc.DB.GetLastInteractionTime(fromJID)
         if err != nil {

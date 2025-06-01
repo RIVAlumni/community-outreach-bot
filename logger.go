@@ -1,7 +1,7 @@
 package main
 
 import (
-    waLog "go.mau.fi/whatsmeow/util/log"
+	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
 type RIVAClientLog struct {
@@ -10,7 +10,7 @@ type RIVAClientLog struct {
     WMLog   waLog.Logger
 }
 
-func (_ *RIVAClientLog) New() *RIVAClientLog {
+func (*RIVAClientLog) New() *RIVAClientLog {
     return &RIVAClientLog{
         MainLog: waLog.Stdout("RIVABot::Log", "INFO", true),
         DBLog:   waLog.Stdout("Sqlite3::Log", "ERROR", true),

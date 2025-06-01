@@ -1,12 +1,12 @@
 package main
 
 import (
-    "os"
-    "strings"
+	"os"
+	"strings"
 
-    "go.mau.fi/whatsmeow/types"
-    "go.mau.fi/whatsmeow/types/events"
-    waLog "go.mau.fi/whatsmeow/util/log"
+	"go.mau.fi/whatsmeow/types"
+	"go.mau.fi/whatsmeow/types/events"
+	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
 type RIVAClientEvent struct {
@@ -25,7 +25,7 @@ func (ce *RIVAClientEvent) RegisterParallelHandler(handler ParallelMessageHandle
     ce.ParallelMessageHandlers = append(ce.ParallelMessageHandlers, handler)
 }
 
-func (_ *RIVAClientEvent) New(rClient *RIVAClient, db *RIVAClientDB, logger waLog.Logger) *RIVAClientEvent {
+func (*RIVAClientEvent) New(rClient *RIVAClient, db *RIVAClientDB, logger waLog.Logger) *RIVAClientEvent {
     ce := &RIVAClientEvent{
         RClient:                   rClient,
         DB:                        db,
@@ -147,9 +147,7 @@ func (ce *RIVAClientEvent) EventMessage (evt *events.Message) {
     var currentSequenceHandlerIndex int = 0
 
     var nextSequence func()
-    var stopSequence func()
-
-    stopSequence = func() {
+    stopSequence := func() {
         sequencePipelineStopped = true
     }
 
@@ -251,4 +249,3 @@ func (ce *RIVAClientEvent) EventUnknownCall (evt *events.UnknownCallEvent) {}
 func (ce *RIVAClientEvent) EventUserAbout (evt *events.UserAbout) {}
 
 func (ce *RIVAClientEvent) EventUserStatusMute (evt *events.UserStatusMute) {}
-

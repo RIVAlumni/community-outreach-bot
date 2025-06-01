@@ -1,11 +1,11 @@
 package main
 
 import (
-    "time"
-    "database/sql"
+	"database/sql"
+	"time"
 
-    "go.mau.fi/whatsmeow"
-    "go.mau.fi/whatsmeow/types/events"
+	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/types/events"
 )
 
 type RIVAClient struct {
@@ -16,13 +16,13 @@ type RIVAClient struct {
     LastSuccessfulConnectionTime time.Time
 }
 
-func (_ *RIVAClient) New(wmClient *whatsmeow.Client, db *sql.DB, logger *RIVAClientLog) *RIVAClient {
+func (*RIVAClient) New(wmClient *whatsmeow.Client, db *sql.DB, logger *RIVAClientLog) *RIVAClient {
     rc := &RIVAClient{
         WMClient:                     wmClient,
         Log:                          logger,
         LastSuccessfulConnectionTime: time.Time{},
     }
-    
+
     rc.DB       = (*RIVAClientDB).New(nil, rc, db, logger.DBLog)
     rc.Handlers = (*RIVAClientEvent).New(nil, rc, rc.DB, logger.MainLog)
     return rc
@@ -51,7 +51,7 @@ func (rc *RIVAClient) EventHandler(evt interface{}) {
     case *events.CallOffer:                     // Useful for auto-rejecting calls
         /*
          * FOR 1:1 CALLS
-         * 
+         *
          * Event is fired when a call is received from WhatsApp.
          * We can get the caller JID from v.From and v.CallID
          * and use rc.WMClient.RejectCall(v.From, v.CallID)

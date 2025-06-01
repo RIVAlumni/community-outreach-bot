@@ -1,12 +1,12 @@
 package main
 
 import (
-    "fmt"
-    "time"
-    "database/sql"
-    
-    "go.mau.fi/whatsmeow/types"
-    waLog "go.mau.fi/whatsmeow/util/log"
+	"database/sql"
+	"fmt"
+	"time"
+
+	"go.mau.fi/whatsmeow/types"
+	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
 type RIVAClientDB struct {
@@ -15,7 +15,7 @@ type RIVAClientDB struct {
     Log     waLog.Logger
 }
 
-func (_ *RIVAClientDB) New(rClient *RIVAClient, db *sql.DB, logger waLog.Logger) *RIVAClientDB {
+func (*RIVAClientDB) New(rClient *RIVAClient, db *sql.DB, logger waLog.Logger) *RIVAClientDB {
     cdb := &RIVAClientDB{
         RClient: rClient,
         DB:      db,
@@ -31,11 +31,7 @@ func (_ *RIVAClientDB) New(rClient *RIVAClient, db *sql.DB, logger waLog.Logger)
 }
 
 func (db *RIVAClientDB) SetupTables() error {
-    query := fmt.Sprintf(`
-    CREATE TABLE IF NOT EXISTS %s (
-        chat_jid     TEXT PRIMARY KEY,
-        last_message DATETIME NOT NULL
-    );`, rBotSqlLastInteractionTableName)
+    query := fmt.Sprintf(rBotSqlLastInteractionCreateQuery, rBotSqlLastInteractionTableName)
 
     _, err := db.DB.Exec(query)
     if err != nil {
@@ -50,7 +46,7 @@ func (db *RIVAClientDB) SetupTables() error {
 func (db *RIVAClientDB) GetLastInteractionTime(userJID types.JID) (time.Time, bool, error) {
     var timestamp time.Time
 
-    query := fmt.Sprintf(`SELECT last_message FROM %s WHERE chat_jid = ?`, rBotSqlLastInteractionTableName)
+    query := fmt.Sprintf(rBotSqlLastInteractionGetQuery, rBotSqlLastInteractionTableName)
     err := db.DB.QueryRow(query, userJID.String()).Scan(&timestamp)
     if err != nil {
         if err == sql.ErrNoRows {
@@ -65,11 +61,7 @@ func (db *RIVAClientDB) GetLastInteractionTime(userJID types.JID) (time.Time, bo
 }
 
 func (db *RIVAClientDB) UpdateLastInteractionTime(userJID types.JID, timestamp time.Time) error {
-    query := fmt.Sprintf(`
-    INSERT OR REPLACE INTO %s (
-        chat_jid,
-        last_message
-    ) VALUES (?, ?)`, rBotSqlLastInteractionTableName)
+    query := fmt.Sprintf(rBotSqlLastInteractionInsertQuery, rBotSqlLastInteractionTableName)
 
     _, err := db.DB.Exec(query, userJID.String(), timestamp)
     if err != nil {

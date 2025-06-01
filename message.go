@@ -1,16 +1,16 @@
 package main
 
 import (
-    "fmt"
-    "time"
-    "context"
-    "strings"
+	"context"
+	"fmt"
+	"strings"
+	"time"
 
-    "go.mau.fi/whatsmeow/types"
-    "go.mau.fi/whatsmeow/types/events"
-    "google.golang.org/protobuf/proto"
+	"go.mau.fi/whatsmeow/types"
+	"go.mau.fi/whatsmeow/types/events"
+	"google.golang.org/protobuf/proto"
 
-    waProto "go.mau.fi/whatsmeow/binary/proto"
+	waProto "go.mau.fi/whatsmeow/binary/proto"
 )
 
 type RIVAClientMessageDirection string
@@ -62,7 +62,7 @@ func (msg *RIVAClientMessage) SendGreetingMessage(recipientJID types.JID) error 
     return nil
 }
 
-func (_ *RIVAClientMessage) New(rClient *RIVAClient, evt *events.Message) RIVAClientMessage {
+func (*RIVAClientMessage) New(rClient *RIVAClient, evt *events.Message) RIVAClientMessage {
     var msgType RIVAClientMessageType
     var msgContent string
 
