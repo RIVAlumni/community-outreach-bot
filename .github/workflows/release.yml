@@ -12,43 +12,43 @@ on:
       - master
     paths: ['.github/workflows/release.yml', '**/Makefile', '**/*.go']
 
-  concurrency:
-    group: ${{ github.workflow }}-${{ github.head_ref && github.ref || github.run_id }}
-    cancel-in-progress: true
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref && github.ref || github.run_id }}
+  cancel-in-progress: true
 
-  env:
-    BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-  
-  jobs:
-    ubuntu-24-runner:
-      runs-on: ubuntu-24.04
+env:
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
-      steps:
-        - name: Clone
-          id: checkout
-          uses: actions/checkout@v4
-          with:
-            fetch-depth: 0
+jobs:
+  ubuntu-24-runner:
+    runs-on: ubuntu-24.04
 
-        - name: Build
-          id: zig_go_build
-          run: |
-            CGO_ENABLED=1 \
-              CGO_LDFLAGS="-static" \
-              GOOS=linux \
-              GOARCH=amd64 \
-              CC="zig cc -target x86_64-linux" \
-              CXX="zig c++ -target x86_64-linux" \
-              go build -a -o rivabot -ldflags '-extldflags "-static" -w -s' .
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-        - name: Pack artifacts
-          id: pack_artifacts
-          run: |
-            zip -r rivabot-bin-ubuntu-24.04-x64.zip ./rivabot
+      - name: Build
+        id: zig_go_build
+        run: |
+          CGO_ENABLED=1 \
+            CGO_LDFLAGS="-static" \
+            GOOS=linux \
+            GOARCH=amd64 \
+            CC="zig cc -target x86_64-linux" \
+            CXX="zig c++ -target x86_64-linux" \
+            go build -a -o rivabot -ldflags '-extldflags "-static" -w -s' .
 
-        - name: Upload artifacts
-          uses: actions/upload-artifact@v4
-          with: 
-            path: rivabot-bin-ubuntu-24.04-x64.zip
-            name: rivabot-bin-ubuntu-24.04-x64.zip
+      - name: Pack artifacts
+        id: pack_artifacts
+        run: |
+          zip -r rivabot-bin-ubuntu-24.04-x64.zip ./rivabot
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with: 
+          path: rivabot-bin-ubuntu-24.04-x64.zip
+          name: rivabot-bin-ubuntu-24.04-x64.zip
 
