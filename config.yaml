@@ -1,5 +1,9 @@
-auto_header: "*[RIVA] A message from a RIVA Representative*"
-auto_footer: "_You are receiving this message because a RIVA Representative has initiated this communication. You are currently in communication with a RIVA Representative._"
+org_header_footer: |
+  *[RIVA] A message from a RIVA Representative*
+
+  %s
+
+  _You are receiving this message because a RIVA Representative has initiated this communication. You are currently in communication with a RIVA Representative._
 greeting_cooldown: 12
 greeting_message: |
   *[RIVA] An automatic reply from RIVABot*

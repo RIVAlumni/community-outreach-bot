@@ -126,6 +126,12 @@ func (msg *RIVAClientMessage) IsSentByMe() bool {
     return msg.getPhoneNumberFromJID(msg.From) == msg.RClient.WMClient.Store.ID.User
 }
 
+func (msg *RIVAClientMessage) HasOrgPrefix() bool {
+    cleanMsg := strings.TrimSpace(msg.Content)
+    hasOrgPrefix := strings.HasPrefix(cleanMsg, "*[RIVA] ")
+    return hasOrgPrefix
+}
+
 func (msg *RIVAClientMessage) getMessageDirection() RIVAClientMessageDirection {
     if msg.RawMessage.Info.IsFromMe {
         return DirectionOutgoing

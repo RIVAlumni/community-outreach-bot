@@ -6,8 +6,7 @@ import (
 )
 
 type RIVAClientConfig struct {
-    AutoHeader       string  `yaml:"auto_header"`
-    AutoFooter       string  `yaml:"auto_footer"`
+    OrgHeaderFooter  string  `yaml:"org_header_footer"`
     GreetingCooldown float64 `yaml:"greeting_cooldown"`
     GreetingMessage  string  `yaml:"greeting_message"`
 }
@@ -53,7 +52,6 @@ var (
     rBotGreetingCooldownHours   = GetConf().GreetingCooldown
     rBotGreetingMessage = GetConf().GreetingMessage
 
-    rBotAutoHeader = GetConf().AutoHeader
-    rBotAutoFooter = GetConf().AutoFooter
+    rBotOrgHeaderFooter = GetConf().OrgHeaderFooter
 )
 

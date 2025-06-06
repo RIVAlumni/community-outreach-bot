@@ -98,9 +98,9 @@ func AutoEditOutgoingMessageHandler(rc *RIVAClient, msg RIVAClientMessage, next 
     if msg.IsSentByMe() {
         rc.Log.MainLog.Infof("AutoEditOutgoingMessageHandler: Processing message: %+v", msg)
         go func() {
-            time.Sleep(1 * time.Second)
-            rc.Log.MainLog.Warnf("AutoEditOutgoingMessageHandler: Stub fired")
-            // Complete message edit via helper function
+            if err := rc.EditIncludeHeaderFooterMessage(msg); err != nil {
+                rc.Log.MainLog.Errorf("Error during auto-edit attempt for message %s: %v", msg.ID, err)
+            }
         }()
     }
 

@@ -2,10 +2,12 @@ package main
 
 import (
 	"database/sql"
+    "fmt"
 	"time"
     "context"
 
 	"go.mau.fi/whatsmeow"
+    "go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 	"google.golang.org/protobuf/proto"
@@ -31,6 +33,32 @@ func (*RIVAClient) New(wmClient *whatsmeow.Client, db *sql.DB, logger *RIVAClien
     rc.DB       = (*RIVAClientDB).New(nil, rc, db, logger.DBLog)
     rc.Handlers = (*RIVAClientEvent).New(nil, rc, rc.DB, logger.MainLog)
     return rc
+}
+
+func (rc *RIVAClient) EditIncludeHeaderFooterMessage(msg RIVAClientMessage) error {
+    if msg.HasOrgPrefix() {
+        return nil
+    }
+
+    newContent := fmt.Sprintf(rBotOrgHeaderFooter, msg.Content)
+    newPayload := &waE2E.Message{}
+    if msg.RawMessage.Message.GetConversation() != "" {
+        newPayload.Conversation = proto.String(newContent)
+    } else if msg.RawMessage.Message.GetExtendedTextMessage() != nil {
+        newPayload.ExtendedTextMessage = &waProto.ExtendedTextMessage{
+            Text:        proto.String(newContent),
+            ContextInfo: msg.RawMessage.Message.GetExtendedTextMessage().GetContextInfo(),
+        }
+    }
+
+    resp, err := rc.WMClient.SendMessage(context.Background(), msg.To, rc.WMClient.BuildEdit(msg.To, msg.ID, newPayload))
+    if err != nil {
+        rc.Log.MainLog.Errorf("Failed to edit message id %s in chat %s: %v", msg.ID, msg.To, err)
+        return err
+    }
+
+    rc.Log.MainLog.Infof("Successfully edited message ID %s in chat %s. New ID: %s, Timestamp: %s", msg.ID, msg.To, resp.ID, resp.Timestamp)
+    return nil
 }
 
 func (rc *RIVAClient) SendGreetingMessage(recipientJID types.JID) error {
