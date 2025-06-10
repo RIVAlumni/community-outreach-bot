@@ -33,6 +33,28 @@ run-image:
 publish-image:
 	podman push docker.io/taronaeo/rivabot
 
+.PHONY: ssh-prod
+ssh-prod:
+	@echo
+	@echo "    ------------ WARNING WARNING WARNING WARNING WARNING ------------- "
+	@echo
+	@echo "    You are about to connect to PRODUCTION! Please ensure that this is "
+	@echo "    what you intend on doing! Unauthorised access, use, reproduction,  "
+	@echo "    possession, modification, interception, damage or transfer         "
+	@echo "    (including such attempts) of any content in this system are        "
+	@echo "    serious offences under the Computer Misuse Act. If found guilty,   "
+	@echo "    an offender can be fined up to SGD100,000 and/or imprisoned up to  "
+	@echo "    20 years. If you are not authorised to use this system, DO NOT LOG "
+	@echo "    IN OR ATTEMPT TO LOG IN                                            "
+	@echo
+	@echo "    ------------ WARNING WARNING WARNING WARNING WARNING ------------- "
+	@echo
+	@echo "    Do you wish to continue? [y/N] " && read ans && [ $${ans:-N } = y ]
+	TERM=xterm gcloud compute ssh \
+		 		--zone "us-central1-c" \
+				"rivalumniops-whatsapp-bot" \
+				--project "rivalumniops-whatsapp"
+
 .PHONY: clean
 clean:
 	rm -f rivabot
