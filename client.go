@@ -42,16 +42,20 @@ func (rc *RIVAClient) EditIncludeHeaderFooterMessage(msg RIVAClientMessage) erro
 
     newContent := fmt.Sprintf(rBotOrgHeaderFooter, msg.Content)
     newPayload := &waE2E.Message{}
-    if msg.RawMessage.Message.GetConversation() != "" {
+    if msg.Type == TypeTextConv {
         newPayload.Conversation = proto.String(newContent)
-    } else if msg.RawMessage.Message.GetExtendedTextMessage() != nil {
+    } else if msg.Type == TypeTextExt {
         newPayload.ExtendedTextMessage = &waProto.ExtendedTextMessage{
             Text:        proto.String(newContent),
             ContextInfo: msg.RawMessage.Message.GetExtendedTextMessage().GetContextInfo(),
         }
     }
 
-    resp, err := rc.WMClient.SendMessage(context.Background(), msg.To, rc.WMClient.BuildEdit(msg.To, msg.ID, newPayload))
+    resp, err := rc.WMClient.SendMessage(context.Background(),
+                                         msg.To,
+                                         rc.WMClient.BuildEdit(msg.To,
+                                                               msg.ID,
+                                                               newPayload))
     if err != nil {
         rc.Log.MainLog.Errorf("Failed to edit message id %s in chat %s: %v", msg.ID, msg.To, err)
         return err

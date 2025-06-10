@@ -17,7 +17,8 @@ const (
 
 type RIVAClientMessageType string
 const (
-    TypeText        RIVAClientMessageType = "TEXT"
+    TypeTextConv    RIVAClientMessageType = "TEXT_CONV"
+    TypeTextExt     RIVAClientMessageType = "TEXT_EXT"
     TypeImage       RIVAClientMessageType = "IMAGE"
     TypeVideo       RIVAClientMessageType = "VIDEO"
     TypeAudio       RIVAClientMessageType = "AUDIO"
@@ -49,10 +50,10 @@ func (*RIVAClientMessage) New(rClient *RIVAClient, evt *events.Message) RIVAClie
 
     switch {
     case evt.Message.GetConversation() != "":
-        msgType = TypeText
+        msgType = TypeTextConv
         msgContent = evt.Message.GetConversation()
     case evt.Message.GetExtendedTextMessage() != nil:
-        msgType = TypeText
+        msgType = TypeTextExt
         msgContent = evt.Message.GetExtendedTextMessage().GetText()
     case evt.Message.GetImageMessage() != nil:
         msgType = TypeImage
@@ -128,7 +129,7 @@ func (msg *RIVAClientMessage) IsSentByMe() bool {
 
 func (msg *RIVAClientMessage) HasOrgPrefix() bool {
     cleanMsg := strings.TrimSpace(msg.Content)
-    hasOrgPrefix := strings.HasPrefix(cleanMsg, "*[RIVA] ")
+    hasOrgPrefix := strings.HasPrefix(cleanMsg, rBotOrgPrefix)
     return hasOrgPrefix
 }
 
