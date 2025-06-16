@@ -9,7 +9,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN make
+RUN make build
 
 
 FROM scratch AS runner
