@@ -95,6 +95,11 @@ func SendGreetingMessageHandler(rc *RIVAClient, msg RIVAClientMessage, next func
 }
 
 func AutoEditOutgoingMessageHandler(rc *RIVAClient, msg RIVAClientMessage, next func(), stop func()) func() {
+    if !msg.IsSentByMe() || (msg.Type != TypeTextConv && msg.Type != TypeTextExt) {
+        rc.Log.MainLog.Infof("AutoEditOutgoingMessageHandler: Skipping message: %+v", msg)
+        return stop
+    }
+
     if msg.IsSentByMe() {
         rc.Log.MainLog.Infof("AutoEditOutgoingMessageHandler: Processing message: %+v", msg)
         go func() {
