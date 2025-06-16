@@ -9,6 +9,7 @@ help:
 	@echo "    - make run-image        Run container image"
 	@echo "    - make publish-image    Push container image to docker.io"
 	@echo "    - make clean            Clean any built binaries"
+	@echo "    - make ssh-prod         Connect to production environment"
 	@echo
 
 .PHONY: build
