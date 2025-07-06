@@ -23,15 +23,15 @@ type RIVAClient struct {
     LastSuccessfulConnectionTime time.Time
 }
 
-func (*RIVAClient) New(wmClient *whatsmeow.Client, db *sql.DB, logger *RIVAClientLog) *RIVAClient {
+func (*RIVAClient) New(wmClient *whatsmeow.Client, db *sql.DB) *RIVAClient {
     rc := &RIVAClient{
         WMClient:                     wmClient,
-        Log:                          logger,
+        Log:                          NewRIVAClientLog("RIVABotClient", "INFO"),
         LastSuccessfulConnectionTime: time.Time{},
     }
 
-    rc.DB       = (*RIVAClientDB).New(nil, rc, db, logger.DBLog)
-    rc.Handlers = (*RIVAClientEvent).New(nil, rc, rc.DB, logger.MainLog)
+    rc.DB       = (*RIVAClientDB).New(nil, rc, db)
+    rc.Handlers = (*RIVAClientEvent).New(nil, rc, rc.DB)
     return rc
 }
 
@@ -57,11 +57,11 @@ func (rc *RIVAClient) EditIncludeHeaderFooterMessage(msg RIVAClientMessage) erro
                                                                msg.ID,
                                                                newPayload))
     if err != nil {
-        rc.Log.MainLog.Errorf("Failed to edit message id %s in chat %s: %v", msg.ID, msg.To, err)
+        rc.Log.Errorf("Failed to edit message id %s in chat %s: %v", msg.ID, msg.To, err)
         return err
     }
 
-    rc.Log.MainLog.Infof("Successfully edited message ID %s in chat %s. New ID: %s, Timestamp: %s", msg.ID, msg.To, resp.ID, resp.Timestamp)
+    rc.Log.Infof("Successfully edited message ID %s in chat %s. New ID: %s, Timestamp: %s", msg.ID, msg.To, resp.ID, resp.Timestamp)
     return nil
 }
 
@@ -74,11 +74,11 @@ func (rc *RIVAClient) SendGreetingMessage(recipientJID types.JID) error {
 
     _, err := rc.WMClient.SendMessage(context.Background(), sanitisedJID, buildMsg)
     if err != nil {
-        rc.Log.MainLog.Errorf("Failed to send greeting message to %s: %v", recipientJID, err)
+        rc.Log.Errorf("Failed to send greeting message to %s: %v", recipientJID, err)
         return err
     }
 
-    rc.Log.MainLog.Infof("Greeting message sent to %s", recipientJID)
+    rc.Log.Infof("Greeting message sent to %s", recipientJID)
     return nil
 }
 

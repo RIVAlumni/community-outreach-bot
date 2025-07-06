@@ -6,20 +6,19 @@ import (
 	"time"
 
 	"go.mau.fi/whatsmeow/types"
-	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
 type RIVAClientDB struct {
     RClient *RIVAClient
     DB      *sql.DB
-    Log     waLog.Logger
+    Log     *RIVAClientLog
 }
 
-func (*RIVAClientDB) New(rClient *RIVAClient, db *sql.DB, logger waLog.Logger) *RIVAClientDB {
+func (*RIVAClientDB) New(rClient *RIVAClient, db *sql.DB) *RIVAClientDB {
     cdb := &RIVAClientDB{
         RClient: rClient,
         DB:      db,
-        Log:     logger,
+        Log:     NewRIVAClientLog("RIVABotDb", "INFO"),
     }
 
     if err := cdb.SetupTables(); err != nil {

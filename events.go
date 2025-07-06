@@ -4,13 +4,12 @@ import (
 	"os"
 
 	"go.mau.fi/whatsmeow/types/events"
-	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
 type RIVAClientEvent struct {
     RClient                   *RIVAClient
     DB                        *RIVAClientDB
-    Log                       waLog.Logger
+    Log                       *RIVAClientLog
     SequentialMessageHandlers []SequentialMessageHandlerFunc
     ParallelMessageHandlers   []ParallelMessageHandlerFunc
 }
@@ -23,11 +22,11 @@ func (ce *RIVAClientEvent) RegisterParallelHandler(handler ParallelMessageHandle
     ce.ParallelMessageHandlers = append(ce.ParallelMessageHandlers, handler)
 }
 
-func (*RIVAClientEvent) New(rClient *RIVAClient, db *RIVAClientDB, logger waLog.Logger) *RIVAClientEvent {
+func (*RIVAClientEvent) New(rClient *RIVAClient, db *RIVAClientDB) *RIVAClientEvent {
     ce := &RIVAClientEvent{
         RClient:                   rClient,
         DB:                        db,
-        Log:                       logger,
+        Log:                       NewRIVAClientLog("RIVAClientEvent", "INFO"),
         SequentialMessageHandlers: make([]SequentialMessageHandlerFunc, 0),
         ParallelMessageHandlers:   make([]ParallelMessageHandlerFunc, 0),
     }
@@ -150,7 +149,7 @@ func (ce *RIVAClientEvent) EventMessage (evt *events.Message) {
             for i, pHandler := range ce.ParallelMessageHandlers {
                 go func(idx int, handler ParallelMessageHandlerFunc, msg RIVAClientMessage) {
                     if err := handler(ce.RClient, msg); err != nil {
-                        ce.RClient.Log.MainLog.Errorf("Error from parallel handler #%d for message id %s: %v", idx+1, msg.ID, err)
+                        ce.Log.Errorf("Error from parallel handler #%d for message id %s: %v", idx+1, msg.ID, err)
                     }
                 }(i, pHandler, msg)
             }
