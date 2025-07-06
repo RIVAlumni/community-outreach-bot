@@ -26,7 +26,7 @@ func (*RIVAClientEvent) New(rClient *RIVAClient, db *RIVAClientDB) *RIVAClientEv
     ce := &RIVAClientEvent{
         RClient:                   rClient,
         DB:                        db,
-        Log:                       NewRIVAClientLog("RIVAClientEvent", "INFO"),
+        Log:                       NewRIVAClientLog("RIVABotEvent", "INFO"),
         SequentialMessageHandlers: make([]SequentialMessageHandlerFunc, 0),
         ParallelMessageHandlers:   make([]ParallelMessageHandlerFunc, 0),
     }
@@ -58,9 +58,21 @@ func (ce *RIVAClientEvent) EventBusinessName(evt *events.BusinessName) {}
 
 func (ce *RIVAClientEvent) EventCallAccept(evt *events.CallAccept) {}
 
-func (ce *RIVAClientEvent) EventCallOffer (evt *events.CallOffer) {}
+func (ce *RIVAClientEvent) EventCallOffer (evt *events.CallOffer) {
+    ce.Log.Infof("Auto-rejecting call from %s (ID: %s)", evt.From, evt.CallID)
 
-func (ce *RIVAClientEvent) EventCallOfferNotice (evt *events.CallOfferNotice) {}
+    if err := ce.RClient.WMClient.RejectCall(evt.From, evt.CallID); err != nil {
+        ce.Log.Errorf("Failed to reject call from %s: %v", evt.From, err)
+    }
+}
+
+func (ce *RIVAClientEvent) EventCallOfferNotice (evt *events.CallOfferNotice) {
+    ce.Log.Infof("Auto-rejecting group call from %s (ID: %s)", evt.From, evt.CallID)
+
+    if err := ce.RClient.WMClient.RejectCall(evt.From, evt.CallID); err != nil {
+        ce.Log.Errorf("Failed to reject call from %s: %v", evt.From, err)
+    }
+}
 
 func (ce *RIVAClientEvent) EventCallPreAccept (evt *events.CallPreAccept) {}
 
