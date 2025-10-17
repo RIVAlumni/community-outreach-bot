@@ -28,7 +28,7 @@ build-image:
 
 .PHONY: run-image
 run-image:
-	podman run -d --name rivabot --restart always -v rivabot:/data docker.io/taronaeo/rivabot
+	sudo podman run -d --name rivabot --restart always -v /mnt/stateful_partition/data/:/data docker.io/taronaeo/rivabot
 
 .PHONY: publish-image
 publish-image:
