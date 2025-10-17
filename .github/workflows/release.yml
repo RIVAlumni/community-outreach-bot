@@ -10,7 +10,7 @@ on:
   push:
     branches:
       - master
-    paths: ['.github/workflows/release.yml', '**/Makefile', '**/*.go']
+    paths: ['.github/workflows/release.yml', '**/Makefile', '**/*.go', '**/*.mod']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref && github.ref || github.run_id }}
